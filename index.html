@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Tasks | Level Up</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="bg-grid"></div>
+    <div class="hexagon-bg"></div>
+    <div class="grid-lines"></div>
+    
+    <div class="container">
+        <div class="header-section">
+            <div class="logo-container">
+                <div class="logo-hexagon"></div>
+                <h1>SOLO <span>TASKS</span></h1>
+            </div>
+            <div class="level-indicator">
+                <div class="level-bar">
+                    <div class="level-progress" id="level-progress"></div>
+                </div>
+                <span class="level-text">LEVEL <span id="level-number">1</span></span>
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <div class="stats-panel">
+                <div class="stat-box">
+                    <i class="fas fa-list-check"></i>
+                    <div class="stat-info">
+                        <span class="stat-label">TASKS</span>
+                        <span class="stat-value" id="tasks-counter">0</span>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-check-double"></i>
+                    <div class="stat-info">
+                        <span class="stat-label">COMPLETED</span>
+                        <span class="stat-value" id="completed-counter">0</span>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-bolt"></i>
+                    <div class="stat-info">
+                        <span class="stat-label">POWER</span>
+                        <span class="stat-value" id="power-level">E</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="todo-input" placeholder="ENTER NEW TASK...">
+                <button id="add-btn"><i class="fas fa-plus"></i> ADD</button>
+            </div>
+            
+            <div class="tasks-container">
+                <div class="tasks-header">
+                    <h2>ACTIVE QUESTS</h2>
+                    <div class="tasks-filter">
+                        <button class="filter-btn active" data-filter="all">ALL</button>
+                        <button class="filter-btn" data-filter="active">ACTIVE</button>
+                        <button class="filter-btn" data-filter="completed">COMPLETED</button>
+                    </div>
+                </div>
+                <ul id="todo-list"></ul>
+                <div class="empty-state" id="empty-state">
+                    <i class="fas fa-dragon empty-icon"></i>
+                    <p>NO QUESTS AVAILABLE</p>
+                    <p class="empty-subtitle">ADD A NEW TASK TO BEGIN YOUR JOURNEY</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
