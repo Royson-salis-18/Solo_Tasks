@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const powerLevel = document.getElementById('power-level');
     const filterBtns = document.querySelectorAll('.filter-btn');
 
-    // Load tasks from localStorage
+    // Load tasks from server
     loadTasks();
     
     // Update counters and empty state
@@ -48,70 +48,109 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    function addTask(taskText) {
-        const task = {
-            id: Date.now(),
-            text: taskText,
-            completed: false
-        };
+    async function addTask(taskText) {
+        try {
+            const response = await fetch('/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ task: taskText })
+            });
 
-        // Save task to localStorage
-        saveTask(task);
+            if (!response.ok) {
+                throw new Error('Failed to add task');
+            }
 
-        // Add task to the UI
-        const li = createTaskElement(task);
-        todoList.appendChild(li);
-        
-        // Add animation class
-        setTimeout(() => {
-            li.classList.add('animated');
-        }, 10);
-    }
-
-    function loadTasks() {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        tasks.forEach(task => {
-            const li = createTaskElement(task);
+            const result = await response.json();
+            
+            // Add task to the UI
+            const li = createTaskElement(result.task);
             todoList.appendChild(li);
             
-            // Add animation class with delay
+            // Add animation class
             setTimeout(() => {
                 li.classList.add('animated');
             }, 10);
-        });
-        updateCounters();
-        updateEmptyState();
+
+            updateCounters();
+            updateEmptyState();
+            updateLevelAndPower();
+        } catch (error) {
+            console.error('Error adding task:', error);
+            alert('Failed to add task. Please try again.');
+        }
     }
 
-    function saveTask(task) {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        tasks.push(task);
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-        updateCounters();
-        updateEmptyState();
-        updateLevelAndPower();
-    }
-
-    function deleteTask(taskId) {
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        tasks = tasks.filter(task => task.id !== taskId);
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-        updateCounters();
-        updateEmptyState();
-        updateLevelAndPower();
-    }
-
-    function toggleTaskCompletion(taskId) {
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        tasks = tasks.map(task => {
-            if (task.id === taskId) {
-                task.completed = !task.completed;
+    async function loadTasks() {
+        try {
+            const response = await fetch('/tasks');
+            if (!response.ok) {
+                throw new Error('Failed to load tasks');
             }
-            return task;
-        });
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-        updateCounters();
-        updateLevelAndPower();
+
+            const tasks = await response.json();
+            
+            // Clear existing tasks
+            todoList.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const li = createTaskElement(task);
+                todoList.appendChild(li);
+                
+                // Add animation class with delay
+                setTimeout(() => {
+                    li.classList.add('animated');
+                }, 10);
+            });
+            
+            updateCounters();
+            updateEmptyState();
+            updateLevelAndPower();
+        } catch (error) {
+            console.error('Error loading tasks:', error);
+        }
+    }
+
+    async function deleteTask(taskId) {
+        try {
+            const response = await fetch(`/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete task');
+            }
+
+            updateCounters();
+            updateEmptyState();
+            updateLevelAndPower();
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            alert('Failed to delete task. Please try again.');
+        }
+    }
+
+    async function toggleTaskCompletion(taskId, completed) {
+        try {
+            const response = await fetch(`/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ completed: completed })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update task');
+            }
+
+            updateCounters();
+            updateLevelAndPower();
+        } catch (error) {
+            console.error('Error updating task:', error);
+            alert('Failed to update task. Please try again.');
+        }
     }
 
     function createTaskElement(task) {
@@ -126,9 +165,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const span = document.createElement('span');
         span.textContent = task.text;
         span.addEventListener('click', function() {
+            const newCompletedState = !task.completed;
             li.classList.toggle('completed');
-            toggleTaskCompletion(task.id);
-            li.setAttribute('data-completed', !task.completed);
+            toggleTaskCompletion(task.id, newCompletedState);
+            li.setAttribute('data-completed', newCompletedState);
+            task.completed = newCompletedState;
         });
 
         const deleteBtn = document.createElement('button');
@@ -151,49 +192,76 @@ document.addEventListener('DOMContentLoaded', function() {
         return li;
     }
     
-    function updateCounters() {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        const totalTasks = tasks.length;
-        const completedTasks = tasks.filter(task => task.completed).length;
-        
-        tasksCounter.textContent = totalTasks;
-        completedCounter.textContent = completedTasks;
-    }
-    
-    function updateEmptyState() {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        if (tasks.length === 0) {
-            emptyState.style.display = 'block';
-            todoList.style.display = 'none';
-        } else {
-            emptyState.style.display = 'none';
-            todoList.style.display = 'block';
+    async function updateCounters() {
+        try {
+            const response = await fetch('/tasks');
+            if (!response.ok) {
+                throw new Error('Failed to load tasks');
+            }
+
+            const tasks = await response.json();
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(task => task.completed).length;
+            
+            tasksCounter.textContent = totalTasks;
+            completedCounter.textContent = completedTasks;
+        } catch (error) {
+            console.error('Error updating counters:', error);
         }
     }
     
-    function updateLevelAndPower() {
-        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        const completedTasks = tasks.filter(task => task.completed).length;
-        
-        // Calculate level based on completed tasks
-        const level = Math.max(1, Math.floor(completedTasks / 5) + 1);
-        levelNumber.textContent = level;
-        
-        // Calculate progress percentage for level bar
-        const nextLevelTasks = level * 5;
-        const progressPercent = ((completedTasks % 5) / 5) * 100;
-        levelProgress.style.width = `${progressPercent}%`;
-        
-        // Update power level (E, D, C, B, A, S)
-        const powerLevels = ['E', 'D', 'C', 'B', 'A', 'S'];
-        const powerIndex = Math.min(powerLevels.length - 1, Math.floor(level / 2));
-        powerLevel.textContent = powerLevels[powerIndex];
-        
-        // Add special effects for higher levels
-        if (level >= 5) {
-            document.querySelector('.container').classList.add('high-level');
-        } else {
-            document.querySelector('.container').classList.remove('high-level');
+    async function updateEmptyState() {
+        try {
+            const response = await fetch('/tasks');
+            if (!response.ok) {
+                throw new Error('Failed to load tasks');
+            }
+
+            const tasks = await response.json();
+            if (tasks.length === 0) {
+                emptyState.style.display = 'block';
+                todoList.style.display = 'none';
+            } else {
+                emptyState.style.display = 'none';
+                todoList.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error updating empty state:', error);
+        }
+    }
+    
+    async function updateLevelAndPower() {
+        try {
+            const response = await fetch('/tasks');
+            if (!response.ok) {
+                throw new Error('Failed to load tasks');
+            }
+
+            const tasks = await response.json();
+            const completedTasks = tasks.filter(task => task.completed).length;
+            
+            // Calculate level based on completed tasks
+            const level = Math.max(1, Math.floor(completedTasks / 5) + 1);
+            levelNumber.textContent = level;
+            
+            // Calculate progress percentage for level bar
+            const nextLevelTasks = level * 5;
+            const progressPercent = ((completedTasks % 5) / 5) * 100;
+            levelProgress.style.width = `${progressPercent}%`;
+            
+            // Update power level (E, D, C, B, A, S)
+            const powerLevels = ['E', 'D', 'C', 'B', 'A', 'S'];
+            const powerIndex = Math.min(powerLevels.length - 1, Math.floor(level / 2));
+            powerLevel.textContent = powerLevels[powerIndex];
+            
+            // Add special effects for higher levels
+            if (level >= 5) {
+                document.querySelector('.container').classList.add('high-level');
+            } else {
+                document.querySelector('.container').classList.remove('high-level');
+            }
+        } catch (error) {
+            console.error('Error updating level and power:', error);
         }
     }
     
@@ -309,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (r > 0) gridSquares[(r - 1) * gridCols + c].classList.add('neon-neighbor-up');
             if (r < gridRows - 1) gridSquares[(r + 1) * gridCols + c].classList.add('neon-neighbor-down');
             lastNeonIndices = [idx];
-                    }
+        }
     });
 
     bgGrid.addEventListener('mouseleave', () => {
